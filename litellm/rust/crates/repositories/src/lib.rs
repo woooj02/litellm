@@ -50,7 +50,7 @@ pub use budget::{Budget, BudgetRepository};
 pub use config::{ConfigParam, ConfigRepository};
 pub use credential::{Credential, CredentialRepository};
 pub use database::{Database, Side};
-pub use end_user::{EndUserRecord, EndUserRepository};
+pub use end_user::{EndUserObjectPermission, EndUserRecord, EndUserRepository};
 pub use gateway_request::{GatewayRequestCount, GatewayRequestRepository};
 pub use inserted::Inserted;
 pub use jwt_key_mapping::{JwtKeyMappingRepository, MappedClaim, NewKeyMapping};

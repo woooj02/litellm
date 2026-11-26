@@ -3,6 +3,7 @@
 
 mod budget;
 mod column;
+mod end_user;
 mod error;
 mod key;
 mod member;
@@ -11,6 +12,7 @@ mod project;
 mod team;
 mod team_membership;
 
+pub use end_user::EndUserDatabase;
 pub use error::Error;
 pub use key::KeyDatabase;
 pub use project::ProjectDatabase;
