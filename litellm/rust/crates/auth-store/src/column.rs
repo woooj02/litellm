@@ -46,11 +46,13 @@ pub(crate) fn nullable_list<V: FromValue>(
     }
 }
 
+pub(crate) fn instant(column: &'static str, at: NaiveDateTime) -> Result<Timestamp, Error> {
+    Timestamp::from_microsecond(at.and_utc().timestamp_micros()).map_err(|_| Error::Row { column })
+}
+
 pub(crate) fn time(
     column: &'static str,
     at: Option<NaiveDateTime>,
 ) -> Result<Option<Timestamp>, Error> {
-    at.map(|at| Timestamp::from_microsecond(at.and_utc().timestamp_micros()))
-        .transpose()
-        .map_err(|_| Error::Row { column })
+    at.map(|at| instant(column, at)).transpose()
 }

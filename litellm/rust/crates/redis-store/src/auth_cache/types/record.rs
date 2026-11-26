@@ -227,16 +227,20 @@ macro_rules! record {
             }
         }
 
+        impl $name {
+            pub(super) fn into_entries(self) -> Vec<(Value, Value)> {
+                [$((stringify!($field), Field::dump(self.$field)),)+]
+                    .into_iter()
+                    .filter_map(|(name, value)| Some((name.to_owned(), value?)))
+                    .chain(self.unread)
+                    .map(|(name, value)| (Value::Str(name), value))
+                    .collect()
+            }
+        }
+
         impl IntoValue for $name {
             fn into_value(self) -> Value {
-                Value::Dict(
-                    [$((stringify!($field), Field::dump(self.$field)),)+]
-                        .into_iter()
-                        .filter_map(|(name, value)| Some((name.to_owned(), value?)))
-                        .chain(self.unread)
-                        .map(|(name, value)| (Value::Str(name), value))
-                        .collect(),
-                )
+                Value::Dict(self.into_entries())
             }
         }
 

@@ -1,6 +1,6 @@
 # Auth store
 
-Database reads for `gateway-auth-core`'s store ports. `KeyDatabase`, `TeamDatabase` and `ProjectDatabase` each read an auth object through the `repositories` readers and shape it into the record the auth cache holds for it. Every host of the core reads a key's row through this crate, so no host shapes the row on its own
+Database reads for `gateway-auth-core`'s store ports. `KeyDatabase`, `TeamDatabase`, `ProjectDatabase` and `TeamMembershipDatabase` each read an auth object through the `repositories` readers and shape it into the record the auth cache holds for it. Every host of the core reads a key's row through this crate, so no host shapes the row on its own
 
 ## Boundary
 
@@ -16,7 +16,10 @@ Database reads for `gateway-auth-core`'s store ports. `KeyDatabase`, `TeamDataba
   - The Python proxy bounds each read on its own: its lookup gate and deadline go around `RustKeyRepository.find`, which is `KeyDatabase::key`. It then nests the permission through its own `get_object_permission`, under that read's own deadline, and caches the key with `cache_key_object`. A permission table that stalls must leave that key served without the permission
 - `TeamDatabase::team` is a team's one query, shaped into `CachedTeam` with its model alias table and nothing else nested. The object permission it points at is not read, and `last_refreshed_at` is unset, since the host that caches a team stamps it. Only the gateway reads a team here so far. The Python proxy still shapes its own from the same repository row, so `tests/team.rs`, `redis-store/tests/auth_cache_team.rs` and `tests/unit/redis/stores/test_auth_cache_team.py` hold the same row and entry literals and are changed together, and a field Python adds to `LiteLLM_TeamTableCachedObj` fails there until it is named here
 - `ProjectDatabase::project` is a project's one query, shaped into `CachedProject` with its budget and nothing else nested. It is the shape `get_project_object` caches under `project_id:{id}`: the object permission is not read, and `last_refreshed_at` is unset, since the host that caches a project stamps it. `tests/project.rs`, `redis-store/tests/auth_cache_project.rs` and `tests/unit/redis/stores/test_auth_cache_project.py` hold the same row and entry literals and are changed together
-  - The budget a project nests is shaped by `budget.rs` into `CachedBudget`, which is `LiteLLM_BudgetTable`'s dump. An object whose model nests a different budget class, such as a team membership's `LiteLLM_BudgetTableFull`, needs its own record
+  - The budget a project nests is shaped by `budget.rs` into `CachedBudget`, which is `LiteLLM_BudgetTable`'s dump
+- `TeamMembershipDatabase::team_membership` is a membership's one query, shaped into `CachedTeamMembership` with its budget. It is the shape the team member budget check caches under `{team_id}_{user_id}`, and `get_team_membership` caches the same dump under `team_membership:{user_id}:{team_id}`. `tests/team_membership.rs`, `redis-store/tests/auth_cache_team_membership.rs` and `tests/unit/redis/stores/test_auth_cache_team_membership.py` hold the same row and entry literals and are changed together
+  - The membership types its budget as `LiteLLM_BudgetTableFull | LiteLLM_BudgetTable`, and pydantic reads every database row as the full one, so `budget.rs` shapes it into `CachedBudgetFull`: the `CachedBudget` with `budget_reset_at` and `created_at` after it
+  - The auth prefetch writes both keys from the key owners row instead, whose budget times are cached without a `Z` and whose NULL `allowed_models` is cached as `[]`, so its bytes differ from this shape for the same row
 - Nothing is returned for an id no row has
 
 ## The cached shape

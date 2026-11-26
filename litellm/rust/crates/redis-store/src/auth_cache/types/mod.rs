@@ -8,11 +8,12 @@ mod project;
 mod record;
 mod settings;
 mod team;
+mod team_membership;
 
 pub(super) use self::record::decode;
 pub use self::{
     bag::{Bag, Ints, Lists},
-    budget::CachedBudget,
+    budget::{CachedBudget, CachedBudgetFull},
     budget_limit::CachedBudgetLimit,
     key::CachedKey,
     member::{CachedMember, MemberRole},
@@ -21,4 +22,5 @@ pub use self::{
     record::ExcludedIfNone,
     settings::Settings,
     team::{CachedModelTable, CachedTeam},
+    team_membership::CachedTeamMembership,
 };
