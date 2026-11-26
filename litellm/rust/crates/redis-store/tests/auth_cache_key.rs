@@ -12,7 +12,7 @@ use litellm_redis_client::commands;
 use litellm_redis_store::{
     FromValue, IntoValue,
     auth_cache::{
-        AuthCache, AuthObject, CachedKey, CachedMember, CachedObjectPermission, Lists, MemberRole,
+        AuthCache, AuthObject, KeyEntry, Lists, MemberEntry, MemberRole, ObjectPermissionEntry,
         Settings,
     },
 };
@@ -92,7 +92,7 @@ async fn a_key_entry_python_wrote_is_read_typed_and_written_back_in_the_same_byt
         .await
         .unwrap()
         .unwrap();
-    let key = CachedKey::from_value(&held).unwrap();
+    let key = KeyEntry::from_value(&held).unwrap();
     cache
         .set(
             None,
@@ -130,7 +130,7 @@ async fn a_key_entry_python_wrote_is_read_typed_and_written_back_in_the_same_byt
             utc("2026-11-19T10:00:00.123Z"),
             Some(5),
             Some(Vec::new()),
-            Some(CachedMember {
+            Some(MemberEntry {
                 user_id: Some("kv-user".to_owned()),
                 user_email: None,
                 role: MemberRole::Admin,
@@ -159,7 +159,7 @@ async fn an_object_permission_entry_python_wrote_is_written_back_in_the_same_byt
         .unwrap();
 
     let held = cache.get(None, &read).await.unwrap().unwrap();
-    let permission = CachedObjectPermission::from_value(&held).unwrap();
+    let permission = ObjectPermissionEntry::from_value(&held).unwrap();
     cache
         .set(None, &rewritten, permission.clone().into_value(), Some(TTL))
         .await

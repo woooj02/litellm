@@ -3,8 +3,8 @@ use litellm_python_compat::Value;
 
 use super::{
     bag::{Bag, Lists},
-    member::CachedMember,
-    object_permission::CachedObjectPermission,
+    member::MemberEntry,
+    object_permission::ObjectPermissionEntry,
     record::{Field, fields, record},
 };
 use crate::{DecodeError, FromValue, IntoValue};
@@ -15,7 +15,7 @@ record! {
     /// cached in this shape too, so it is what a key read returns from either tier. `expires`
     /// stays the text it was written as, since the model types it `str | datetime` and Python
     /// before 3.11 cannot read a `Z` suffix back.
-    pub struct CachedKey {
+    pub struct KeyEntry {
         key_id: Option<String>,
         token: Option<String>,
         key_name: Option<String>,
@@ -57,7 +57,7 @@ record! {
         settings_updated_at: Option<Timestamp>,
         last_active: Option<Timestamp>,
         object_permission_id: Option<String>,
-        object_permission: Option<CachedObjectPermission>,
+        object_permission: Option<ObjectPermissionEntry>,
         access_group_ids: Option<Vec<String>>,
         rotation_count: Option<i64> = Some(0),
         auto_rotate: Option<bool> = Some(false),
@@ -78,7 +78,7 @@ record! {
         team_blocked: bool,
         soft_budget: Option<f64>,
         team_model_aliases: Option<Bag>,
-        team_member: Option<CachedMember>,
+        team_member: Option<MemberEntry>,
         team_metadata: Option<Bag>,
         team_object_permission_id: Option<String>,
         team_member_spend: Option<f64>,
@@ -121,8 +121,8 @@ record! {
         user: Option<Value>,
         #[redact(with = "[REDACTED]")]
         created_by_user: Option<Value>,
-        end_user_object_permission: Option<CachedObjectPermission>,
-        team_object_permission: Option<CachedObjectPermission>,
+        end_user_object_permission: Option<ObjectPermissionEntry>,
+        team_object_permission: Option<ObjectPermissionEntry>,
         jwt_claims: Option<Bag>,
     }
 }
@@ -133,11 +133,11 @@ mod tests {
     use litellm_python_compat::{Value, json};
     use rstest::rstest;
 
-    use super::CachedKey;
+    use super::KeyEntry;
     use crate::{DecodeError, FromValue, IntoValue};
 
-    fn key(entry: &str) -> Result<CachedKey, DecodeError> {
-        CachedKey::from_value(&json::loads(entry).unwrap())
+    fn key(entry: &str) -> Result<KeyEntry, DecodeError> {
+        KeyEntry::from_value(&json::loads(entry).unwrap())
     }
 
     #[rstest]
@@ -222,7 +222,7 @@ mod tests {
         #[case] instant: &str,
         #[case] written: &str,
     ) {
-        let key = CachedKey {
+        let key = KeyEntry {
             created_at: Some(instant.parse().unwrap()),
             ..key("{}").unwrap()
         };
