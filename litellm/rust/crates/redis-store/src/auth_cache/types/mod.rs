@@ -11,6 +11,7 @@ mod record;
 mod settings;
 mod team;
 mod team_membership;
+mod user;
 
 pub(super) use self::record::decode;
 pub use self::{
@@ -27,4 +28,5 @@ pub use self::{
     settings::Settings,
     team::{CachedModelTable, CachedTeam},
     team_membership::CachedTeamMembership,
+    user::{CachedOrganizationMembership, CachedUser},
 };

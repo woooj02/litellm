@@ -12,6 +12,7 @@ mod organization;
 mod project;
 mod team;
 mod team_membership;
+mod user;
 
 pub use end_user::EndUserDatabase;
 pub use error::Error;
@@ -20,3 +21,4 @@ pub use organization::OrganizationDatabase;
 pub use project::ProjectDatabase;
 pub use team::TeamDatabase;
 pub use team_membership::TeamMembershipDatabase;
+pub use user::UserDatabase;

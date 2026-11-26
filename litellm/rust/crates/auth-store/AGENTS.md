@@ -1,6 +1,6 @@
 # Auth store
 
-Database reads for `gateway-auth-core`'s store ports. `KeyDatabase`, `TeamDatabase`, `ProjectDatabase`, `TeamMembershipDatabase`, `EndUserDatabase` and `OrganizationDatabase` each read an auth object through the `repositories` readers and shape it into the record the auth cache holds for it. Every host of the core reads a key's row through this crate, so no host shapes the row on its own
+Database reads for `gateway-auth-core`'s store ports. `KeyDatabase`, `TeamDatabase`, `ProjectDatabase`, `TeamMembershipDatabase`, `EndUserDatabase`, `OrganizationDatabase` and `UserDatabase` each read an auth object through the `repositories` readers and shape it into the record the auth cache holds for it. Every host of the core reads a key's row through this crate, so no host shapes the row on its own
 
 ## Boundary
 
@@ -28,6 +28,10 @@ Database reads for `gateway-auth-core`'s store ports. `KeyDatabase`, `TeamDataba
   - `get_org_object_by_alias` caches the organization an alias names, read without its budget, under `org_alias:{alias}` and `org_id:{id}` in that same shape, and `get_org_object_for_request` copies the with-budget entry to `org_id:{id}:with_budget:last_known`. Neither key gets a read of its own here
   - The budget is `LiteLLM_BudgetTable`, so `budget.rs` shapes it into `CachedBudget`, and a budget with windows refuses the whole organization
   - The auth prefetch writes both id keys from the key owners row instead, with the budget and object permission nested under `org_id:{id}` too, budget times without a `Z` and `[]` for a NULL `allowed_models`, so its bytes differ from this shape for the same row
+- `UserDatabase::user` is the user repository's resolve of a sign-in that carries only the user id, which is what `get_user_object` asks for on a plain lookup. With no SSO id or email it has nothing to fall back to or link, so it only reads. It is shaped into `CachedUser` with the user's organization memberships, ordered by organization id, and nothing else nested, so the object permission is not read. It is the shape `get_user_object` caches under the bare user id for the row it read, for the row its upsert stored and for that row with a backfilled email, and the shape the Python auth host recaches after a role or team change. `tests/user.rs`, `redis-store/tests/auth_cache_user.rs` and `tests/unit/redis/stores/test_auth_cache_user.py` hold the same row and entry literals and are changed together
+  - Each membership is `LiteLLM_OrganizationMembershipTable`, kept beside the user as `CachedOrganizationMembership`. The read nests neither its budget nor its user, and the model requires `spend` and both times, which the columns let be NULL, so a membership missing one refuses the whole user
+  - Nothing is cached for an id no row has. `get_user_object` raises instead, and only notes the miss in its own process
+  - The auth prefetch writes the key from the key owners row instead, whose times have no `Z` and whose memberships come in no set order, so its bytes differ from this shape for the same row
 - Nothing is returned for an id no row has
 
 ## The cached shape
