@@ -1,6 +1,6 @@
 # Auth store
 
-Database reads for `gateway-auth-core`'s store ports. `KeyDatabase`, `TeamDatabase`, `ProjectDatabase`, `TeamMembershipDatabase` and `EndUserDatabase` each read an auth object through the `repositories` readers and shape it into the record the auth cache holds for it. Every host of the core reads a key's row through this crate, so no host shapes the row on its own
+Database reads for `gateway-auth-core`'s store ports. `KeyDatabase`, `TeamDatabase`, `ProjectDatabase`, `TeamMembershipDatabase`, `EndUserDatabase` and `OrganizationDatabase` each read an auth object through the `repositories` readers and shape it into the record the auth cache holds for it. Every host of the core reads a key's row through this crate, so no host shapes the row on its own
 
 ## Boundary
 
@@ -24,6 +24,10 @@ Database reads for `gateway-auth-core`'s store ports. `KeyDatabase`, `TeamDataba
   - The budget is the row's own. `get_end_user_object` caches an end user with no budget of its own with the proxy-wide default end-user budget merged into `litellm_budget_table` and `budget_id` still unset. That merge stays with the host, and `CachedEndUser` carries either budget
   - The budget is `LiteLLM_BudgetTable`, so `budget.rs` shapes it into `CachedBudget`, and a budget with windows refuses the whole end user, as the model does. `get_end_user_object` then caches nothing for it
   - The end user query reads its object permission with `to_jsonb`, so an array column that is SQL NULL is left out of the row and takes the model's default, an empty list but unset for `mcp_toolsets` and `skills`. `object_permission.rs` shapes it with `cached_end_user_object_permission`. A permission the model refuses refuses the whole end user too
+- `OrganizationDatabase::organization` is an organization's one query, shaped into `CachedOrganization`, with its budget only when the caller asks for it, as `find_with_optional_budget` takes it. With the budget it is the shape `get_org_object` caches under `org_id:{id}:with_budget`, and without it the shape under `org_id:{id}`, so one shaper serves both keys and they differ only in `litellm_budget_table`. The object permission is not read, and `users` is never set. `tests/organization.rs`, `redis-store/tests/auth_cache_organization.rs` and `tests/unit/redis/stores/test_auth_cache_organization.py` hold the same row and entry literals and are changed together
+  - `get_org_object_by_alias` caches the organization an alias names, read without its budget, under `org_alias:{alias}` and `org_id:{id}` in that same shape, and `get_org_object_for_request` copies the with-budget entry to `org_id:{id}:with_budget:last_known`. Neither key gets a read of its own here
+  - The budget is `LiteLLM_BudgetTable`, so `budget.rs` shapes it into `CachedBudget`, and a budget with windows refuses the whole organization
+  - The auth prefetch writes both id keys from the key owners row instead, with the budget and object permission nested under `org_id:{id}` too, budget times without a `Z` and `[]` for a NULL `allowed_models`, so its bytes differ from this shape for the same row
 - Nothing is returned for an id no row has
 
 ## The cached shape
