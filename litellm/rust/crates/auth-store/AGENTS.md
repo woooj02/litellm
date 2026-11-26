@@ -5,7 +5,7 @@ Database reads for `gateway-auth-core`'s store ports. `KeyDatabase` reads an aut
 ## Boundary
 
 - No decision lives here. The core decides who may call what, and this crate only reads. A caller that must refuse on what a read found, such as a writer read whose object permission row is gone, gets the facts back and refuses itself
-- No cache is touched here. The value is the family's typed record in `redis-store/src/auth_cache/types.rs`, and reading, writing and evicting the cache stay with the host
+- No cache is touched here. The value is the family's typed record in `redis-store/src/auth_cache/types/`, and reading, writing and evicting the cache stay with the host
 - No query is written here. A row comes from its repository
 - It covers only objects the core asks a host for. The object permission is read here because a cached key nests it
 - Concrete structs, never a trait. A test drives them against real Postgres
